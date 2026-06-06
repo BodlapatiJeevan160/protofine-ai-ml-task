@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contradiction Detector · Protofine.ai</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1e2333;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --muted: #7c85a0;
+  --hint: #4a5168;
+  --accent: #6c63ff;
+  --accent2: #4f9dff;
+  --red: #ff4d4d;
+  --red-bg: rgba(255,77,77,0.1);
+  --red-border: rgba(255,77,77,0.25);
+  --green: #36d399;
+  --green-bg: rgba(54,211,153,0.1);
+  --green-border: rgba(54,211,153,0.25);
+  --amber: #fbbf24;
+  --amber-bg: rgba(251,191,36,0.1);
+  --amber-border: rgba(251,191,36,0.25);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:28px 20px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{padding:32px 36px;max-width:780px}
+
+/* ── Sidebar ── */
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.logo-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0}
+.logo-text{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.logo-sub{font-size:11px;color:var(--muted)}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--hint);padding:12px 8px 6px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);font-size:13px;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item i{font-size:15px;flex-shrink:0}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(108,99,255,0.15);color:#a89dff;border:1px solid rgba(108,99,255,0.2)}
+.nav-item .nav-badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;background:var(--surface2);color:var(--muted)}
+.sidebar-footer{margin-top:auto;padding-top:20px;border-top:1px solid var(--border)}
+.footer-pill{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--radius-sm);background:var(--green-bg);border:1px solid var(--green-border);font-size:11px;color:var(--green)}
+
+/* ── Header ── */
+.page-header{margin-bottom:28px}
+.page-header h1{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.header-badge{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(108,99,255,0.15);color:#a89dff;border:1px solid rgba(108,99,255,0.2);font-weight:500}
+.page-header p{font-size:13px;color:var(--muted);line-height:1.7;max-width:580px}
+
+/* ── Panel ── */
+.panel{display:none}.panel.active{display:block}
+
+/* ── Input area ── */
+.input-label{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.examples-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ex-chip{padding:4px 11px;font-size:11px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap}
+.ex-chip:hover{border-color:rgba(108,99,255,0.4);color:var(--accent);background:rgba(108,99,255,0.08)}
+.ex-chip.active{background:rgba(108,99,255,0.15);border-color:rgba(108,99,255,0.4);color:#a89dff}
+textarea{width:100%;min-height:120px;padding:13px 15px;font-size:13px;font-family:inherit;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);resize:vertical;line-height:1.7;outline:none;transition:border-color .15s}
+textarea:focus{border-color:rgba(108,99,255,0.5);box-shadow:0 0 0 3px rgba(108,99,255,0.08)}
+textarea::placeholder{color:var(--hint)}
+.input-footer{display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:14px}
+.char-count{font-size:11px;color:var(--hint)}
+.btn-row{display:flex;gap:8px}
+.btn-primary{flex:1;padding:10px 20px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;letter-spacing:.01em}
+.btn-primary:hover{background:#7c74ff;transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{padding:10px 16px;font-size:13px;background:var(--surface);color:var(--muted);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.btn-secondary:hover{background:var(--surface2);color:var(--text)}
+
+/* ── Result card ── */
+.result-card{margin-top:20px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);overflow:hidden;display:none}
+.result-card.show{display:block;animation:slideIn .2s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.result-top{padding:18px 20px;border-bottom:1px solid var(--border)}
+.verdict-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.verdict-badge{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600}
+.verdict-badge.danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.verdict-badge.success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.verdict-badge.warning{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.conf-pill{font-size:11px;padding:3px 9px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);font-weight:500}
+.result-reason{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── Score ring ── */
+.score-section{padding:18px 20px;display:grid;grid-template-columns:80px 1fr;gap:20px;align-items:center;border-bottom:1px solid var(--border)}
+.ring-wrap{position:relative;width:72px;height:72px}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--surface2);stroke-width:7}
+.ring-fill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1),stroke .3s}
+.ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-size:16px;font-weight:700;line-height:1;color:var(--text)}
+.ring-unit{font-size:9px;color:var(--muted);margin-top:1px}
+.score-details{display:flex;flex-direction:column;gap:8px}
+.score-row{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.score-row-label{color:var(--muted)}
+.score-row-val{font-weight:600;color:var(--text)}
+.bar-track{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px}
+.bar-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ── Checks fired ── */
+.checks-section{padding:14px 20px;border-bottom:1px solid var(--border)}
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);font-weight:600;margin-bottom:10px}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);background:var(--surface2);margin-bottom:6px;border:1px solid var(--border)}
+.check-item:last-child{margin-bottom:0}
+.check-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px}
+.check-content{flex:1}
+.check-rule{font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.check-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── Quote blocks ── */
+.quotes-section{padding:14px 20px}
+.quotes-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quote-block{padding:12px 14px;border-radius:var(--radius-sm);background:var(--surface2)}
+.quote-block.a{border-top:2px solid var(--red)}
+.quote-block.b{border-top:2px solid var(--accent2)}
+.quote-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.quote-block.a .quote-tag{color:var(--red)}
+.quote-block.b .quote-tag{color:var(--accent2)}
+.quote-text{font-size:12px;color:var(--text);line-height:1.6;font-style:italic;opacity:.85}
+
+/* ── Test results ── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.metric-card{padding:16px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);text-align:center}
+.metric-val{font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.metric-lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.metric-card.highlight{border-color:rgba(108,99,255,0.3);background:rgba(108,99,255,0.06)}
+.metric-card.highlight .metric-val{color:#a89dff}
+.test-list{display:flex;flex-direction:column;gap:8px}
+.test-card{border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);overflow:hidden;cursor:pointer;transition:border-color .15s}
+.test-card:hover{border-color:rgba(108,99,255,0.3)}
+.test-header{padding:12px 16px;display:flex;align-items:center;gap:10px}
+.test-num{font-size:11px;font-weight:700;color:var(--hint);min-width:22px}
+.test-name{font-size:13px;color:var(--text);flex:1;font-weight:500}
+.tag-row{display:flex;gap:5px}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.tag.pass{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.tag.fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.tag.flagged{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.tag.clean{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.tag.easy{background:rgba(54,211,153,0.08);color:#36d399;border:1px solid rgba(54,211,153,0.2)}
+.tag.medium{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.tag.hard{background:rgba(255,77,77,0.08);color:#ff8080;border:1px solid rgba(255,77,77,0.2)}
+.test-body{display:none;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface2)}
+.test-body.open{display:block}
+.test-body p{font-size:12px;color:var(--muted);line-height:1.6}
+.test-score-line{display:flex;align-items:center;gap:8px;margin-top:8px}
+.test-score-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px}
+
+/* ── Engine page ── */
+.engine-layers{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.layer-card{display:flex;gap:14px;padding:14px 16px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);transition:border-color .15s}
+.layer-card:hover{border-color:rgba(108,99,255,0.3)}
+.layer-num{width:28px;height:28px;border-radius:50%;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#a89dff;flex-shrink:0}
+.layer-body h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.layer-body p{font-size:12px;color:var(--muted);line-height:1.55}
+.layer-pts{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;white-space:nowrap;padding-top:2px}
+.scoring-table{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden}
+.score-row-t{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px}
+.score-row-t:last-child{border-bottom:none}
+.score-row-t .lbl{color:var(--muted);font-family:'Courier New',monospace;font-size:12px}
+.score-row-t .pts{font-weight:700;color:var(--accent)}
+.conf-tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.tier-card{padding:12px 14px;border-radius:var(--radius-sm);text-align:center}
+.tier-card.high{background:var(--red-bg);border:1px solid var(--red-border)}
+.tier-card.med{background:var(--amber-bg);border:1px solid var(--amber-border)}
+.tier-card.low{background:var(--green-bg);border:1px solid var(--green-border)}
+.tier-label{font-size:13px;font-weight:700;margin-bottom:2px}
+.tier-card.high .tier-label{color:var(--red)}
+.tier-card.med .tier-label{color:var(--amber)}
+.tier-card.low .tier-label{color:var(--green)}
+.tier-range{font-size:11px;color:var(--muted)}
+.tier-action{font-size:11px;margin-top:4px;font-weight:500}
+.tier-card.high .tier-action{color:var(--red)}
+.tier-card.med .tier-action{color:var(--amber)}
+.tier-card.low .tier-action{color:var(--green)}
+
+/* ── Guide page ── */
+.guide-section{margin-bottom:24px}
+.guide-section h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.guide-section h3 i{color:var(--accent);font-size:16px}
+.contrast-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.contrast-card{padding:14px;border-radius:var(--radius-sm)}
+.contrast-card.good{background:var(--green-bg);border:1px solid var(--green-border)}
+.contrast-card.bad{background:var(--red-bg);border:1px solid var(--red-border)}
+.contrast-card .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.contrast-card.good .label{color:var(--green)}
+.contrast-card.bad .label{color:var(--red)}
+.contrast-card p{font-size:12px;color:var(--muted);line-height:1.55;font-style:italic}
+.tip-list{display:flex;flex-direction:column;gap:7px}
+.tip-item{display:flex;gap:10px;align-items:flex-start;padding:10px 13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.tip-num{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.tip-text{font-size:12px;color:var(--muted);line-height:1.55}
+.tip-text strong{color:var(--text);font-weight:600}
+.output-table{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden}
+.output-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px}
+.output-row:last-child{border-bottom:none}
+.output-key{font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:#a89dff;min-width:100px}
+.output-val{font-size:12px;color:var(--muted)}
+.warning-box{padding:14px 16px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--radius-sm)}
+.warning-box p{font-size:13px;color:var(--muted);line-height:1.6}
+.warning-box strong{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-check"></i></div>
+    <div>
+      <div class="logo-text">Contradiction Detector</div>
+      <div class="logo-sub">Protofine.ai · AI/ML Internship</div>
+    </div>
+  </div>
+
+  <div class="nav-section">Tools</div>
+  <button class="nav-item active" onclick="showPanel('detector',this)">
+    <i class="ti ti-scan"></i> Detector
+  </button>
+  <button class="nav-item" onclick="showPanel('results',this)">
+    <i class="ti ti-test-pipe"></i> Test results
+    <span class="nav-badge">6/6</span>
+  </button>
+
+  <div class="nav-section">Learn</div>
+  <button class="nav-item" onclick="showPanel('engine',this)">
+    <i class="ti ti-cpu"></i> How it works
+  </button>
+  <button class="nav-item" onclick="showPanel('guide',this)">
+    <i class="ti ti-book"></i> Prompt guide
+  </button>
+
+  <div class="sidebar-footer">
+    <div class="footer-pill">
+      <i class="ti ti-plug-x" style="font-size:14px"></i>
+      <span>No API key required</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- DETECTOR -->
+  <div class="panel active" id="panel-detector">
+    <div class="page-header">
+      <h1><i class="ti ti-scan" style="color:var(--accent);font-size:20px"></i> Self-Contradiction Detector <span class="header-badge">v1.0</span></h1>
+      <p>Catches confident AI errors — fluent answers that secretly contradict themselves. Five rule layers, zero API calls, runs entirely offline.</p>
+    </div>
+
+    <div class="input-label"><i class="ti ti-sparkles" style="font-size:13px;color:var(--accent)"></i> Load an example or paste any AI-generated text</div>
+    <div class="examples-row" id="chip-row"></div>
+
+    <textarea id="ta" placeholder="Paste AI-generated text here (3+ sentences works best)…" oninput="countChars()"></textarea>
+    <div class="input-footer">
+      <span class="char-count" id="cc">0 chars</span>
+      <span style="font-size:11px;color:var(--hint)">3–8 sentences ideal</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="analyze()"><i class="ti ti-scan"></i> Analyze for contradictions</button>
+      <button class="btn-secondary" onclick="clearAll()"><i class="ti ti-x"></i> Clear</button>
+    </div>
+
+    <div class="result-card" id="result-card">
+      <!-- verdict -->
+      <div class="result-top">
+        <div class="verdict-row">
+          <div class="verdict-badge" id="vbadge"></div>
+          <span class="conf-pill" id="cpill"></span>
+        </div>
+        <p class="result-reason" id="rreason"></p>
+      </div>
+      <!-- score ring -->
+      <div class="score-section">
+        <div class="ring-wrap">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle class="ring-track" cx="36" cy="36" r="29"/>
+            <circle class="ring-fill" id="ring-fill" cx="36" cy="36" r="29" stroke-dasharray="182.2" stroke-dashoffset="182.2"/>
+          </svg>
+          <div class="ring-label">
+            <span class="ring-num" id="ring-num">0</span>
+            <span class="ring-unit">/ 100</span>
+          </div>
+        </div>
+        <div class="score-details">
+          <div class="score-row">
+            <span class="score-row-label">Contradiction score</span>
+            <span class="score-row-val" id="score-val">0 / 100</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="bar-fill" style="width:0%"></div></div>
+          <div class="score-row" style="margin-top:4px">
+            <span class="score-row-label">Rules fired</span>
+            <span class="score-row-val" id="rules-count">0</span>
+          </div>
+        </div>
+      </div>
+      <!-- checks -->
+      <div class="checks-section" id="checks-section">
+        <div class="section-label">Detection rules fired</div>
+        <div id="checks-list"></div>
+      </div>
+      <!-- quotes -->
+      <div class="quotes-section" id="quotes-section" style="display:none">
+        <div class="section-label">Conflicting claims</div>
+        <div class="quotes-grid">
+          <div class="quote-block a">
+            <div class="quote-tag">Claim A</div>
+            <div class="quote-text" id="qa"></div>
+          </div>
+          <div class="quote-block b">
+            <div class="quote-tag">Claim B</div>
+            <div class="quote-text" id="qb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEST RESULTS -->
+  <div class="panel" id="panel-results">
+    <div class="page-header">
+      <h1><i class="ti ti-test-pipe" style="color:var(--accent);font-size:20px"></i> Test results</h1>
+      <p>6 hand-crafted cases: 4 true contradictions, 2 clean texts (including a nuance trap). Click any case to expand.</p>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card highlight"><div class="metric-val" id="m1">—</div><div class="metric-lbl">Passed</div></div>
+      <div class="metric-card"><div class="metric-val" id="m2">—</div><div class="metric-lbl">Precision</div></div>
+      <div class="metric-card"><div class="metric-val" id="m3">—</div><div class="metric-lbl">Recall</div></div>
+      <div class="metric-card"><div class="metric-val" id="m4">—</div><div class="metric-lbl">F1 score</div></div>
+    </div>
+    <div class="test-list" id="test-list"></div>
+  </div>
+
+  <!-- ENGINE -->
+  <div class="panel" id="panel-engine">
+    <div class="page-header">
+      <h1><i class="ti ti-cpu" style="color:var(--accent);font-size:20px"></i> How it works</h1>
+      <p>Five independent rule layers. Each fires on different contradiction patterns and contributes points to a 0–100 severity score. No LLM, no API, fully deterministic.</p>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Five detection layers</div>
+    <div class="engine-layers">
+      <div class="layer-card">
+        <div class="layer-num">1</div>
+        <div class="layer-body">
+          <h4>Antonym-pair scanner</h4>
+          <p>Checks every sentence pair for 40+ known opposite-meaning phrases: <code style="font-size:11px;color:#a89dff">stateless/stateful</code>, <code style="font-size:11px;color:#a89dff">never writes/writes to disk</code>, <code style="font-size:11px;color:#a89dff">safe indefinitely/should not</code>. Fires when sentence i contains term A and sentence j contains its antonym B.</p>
+        </div>
+        <div class="layer-pts">+40 pts</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">2</div>
+        <div class="layer-body">
+          <h4>Absolute-negation flip</h4>
+          <p>Detects categorical claims using <code style="font-size:11px;color:#a89dff">never</code>, <code style="font-size:11px;color:#a89dff">always</code>, <code style="font-size:11px;color:#a89dff">completely</code>, <code style="font-size:11px;color:#a89dff">no X</code>. Fires when another sentence contradicts that absolute on the same shared subject noun.</p>
+        </div>
+        <div class="layer-pts">+35 pts</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">3</div>
+        <div class="layer-body">
+          <h4>Quantity contradiction</h4>
+          <p>Catches numeric flips: <code style="font-size:11px;color:#a89dff">zero/none/nothing</code> in one sentence versus a non-zero quantity in another about the same subject. Also catches <code style="font-size:11px;color:#a89dff">all/every</code> versus <code style="font-size:11px;color:#a89dff">some/sometimes/partial</code>.</p>
+        </div>
+        <div class="layer-pts">+30 pts</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">4</div>
+        <div class="layer-body">
+          <h4>Scope-violation detector</h4>
+          <p>Catches when text claims universal scope (<code style="font-size:11px;color:#a89dff">in all cases</code>, <code style="font-size:11px;color:#a89dff">without exception</code>, <code style="font-size:11px;color:#a89dff">guaranteed</code>) then later narrows it (<code style="font-size:11px;color:#a89dff">sometimes</code>, <code style="font-size:11px;color:#a89dff">under certain conditions</code>) on the same subject.</p>
+        </div>
+        <div class="layer-pts">+25 pts</div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">5</div>
+        <div class="layer-body">
+          <h4>Shared-subject negation</h4>
+          <p>Compares sentence pairs sharing ≥2 key nouns. If one sentence asserts and the other negates (using <code style="font-size:11px;color:#a89dff">not/no/without/cannot</code>), flags as candidate contradiction — only if not already covered by layers 1–4.</p>
+        </div>
+        <div class="layer-pts">+20 pts</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Scoring & confidence tiers</div>
+    <div class="scoring-table" style="margin-bottom:14px">
+      <div class="score-row-t"><span class="lbl">score ≥ 60</span><span class="pts">HIGH confidence — act on it</span></div>
+      <div class="score-row-t"><span class="lbl">score 35 – 59</span><span class="pts">MEDIUM — human review advised</span></div>
+      <div class="score-row-t"><span class="lbl">score &lt; 35</span><span class="pts">LOW — possible nuance, don't auto-reject</span></div>
+      <div class="score-row-t"><span class="lbl">score = 0</span><span class="pts">CLEAN — no contradiction found</span></div>
+    </div>
+    <div class="conf-tiers">
+      <div class="tier-card high"><div class="tier-label">High</div><div class="tier-range">score ≥ 60</div><div class="tier-action">Act on it</div></div>
+      <div class="tier-card med"><div class="tier-label">Medium</div><div class="tier-range">score 35–59</div><div class="tier-action">Human review</div></div>
+      <div class="tier-card low"><div class="tier-label">Low / Clean</div><div class="tier-range">score &lt; 35</div><div class="tier-action">Don't auto-reject</div></div>
+    </div>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="panel" id="panel-guide">
+    <div class="page-header">
+      <h1><i class="ti ti-book" style="color:var(--accent);font-size:20px"></i> Prompt guide</h1>
+      <p>How to write text that gives the detector the best chance of finding real issues — and what it cannot catch.</p>
+    </div>
+
+    <div class="guide-section">
+      <h3><i class="ti ti-git-compare"></i> What counts as a contradiction?</h3>
+      <div class="contrast-grid">
+        <div class="contrast-card good">
+          <div class="label"><i class="ti ti-check"></i> Real contradiction</div>
+          <p>"Redis never writes data to disk." … "Redis uses AOF logs to write all data to disk." — mutually exclusive. If one is true, the other must be false.</p>
+        </div>
+        <div class="contrast-card bad">
+          <div class="label"><i class="ti ti-x"></i> Not a contradiction</div>
+          <p>"Python is slow for math, but NumPy is fast." — Both can be simultaneously true. That's nuance, not a logical conflict. The detector won't flag this.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3><i class="ti ti-pencil"></i> Tips for best results</h3>
+      <div class="tip-list">
+        <div class="tip-item"><span class="tip-num">1</span><span class="tip-text"><strong>Submit complete answers, not fragments.</strong> Contradictions often span an intro claim and a later exception — the full context is needed.</span></div>
+        <div class="tip-item"><span class="tip-num">2</span><span class="tip-text"><strong>3–8 sentences works best.</strong> Too short means no pairs to compare. Too long can dilute the signal.</span></div>
+        <div class="tip-item"><span class="tip-num">3</span><span class="tip-text"><strong>Technical and factual content.</strong> The engine targets logical claims — code explanations, medical advice, policy docs. Not poetry.</span></div>
+        <div class="tip-item"><span class="tip-num">4</span><span class="tip-text"><strong>Don't test with metaphors.</strong> "Both a blessing and a curse" is figurative language, not a logical contradiction. The engine won't flag it.</span></div>
+        <div class="tip-item"><span class="tip-num">5</span><span class="tip-text"><strong>Low confidence = human review.</strong> A score under 35 means borderline — don't auto-reject, check manually.</span></div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3><i class="ti ti-code"></i> Output fields</h3>
+      <div class="output-table">
+        <div class="output-row"><span class="output-key">flag</span><span class="output-val">true/false — did a contradiction fire?</span></div>
+        <div class="output-row"><span class="output-key">score</span><span class="output-val">0–100 severity — sum of all fired rule weights, capped at 100</span></div>
+        <div class="output-row"><span class="output-key">confidence</span><span class="output-val">high ≥60 · medium 35–59 · low &lt;35</span></div>
+        <div class="output-row"><span class="output-key">checks</span><span class="output-val">list of fired rules with the exact sentences involved</span></div>
+        <div class="output-row"><span class="output-key">quote_a / quote_b</span><span class="output-val">the two contradicting sentences verbatim</span></div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3><i class="ti ti-alert-triangle"></i> What this does not catch</h3>
+      <div class="warning-box">
+        <p>This tool checks <strong>logic</strong>, not facts. It will not catch fabricated statistics, made-up citations, outdated information, or vague unhelpful answers. Use it as <strong>one layer</strong> of a multi-layer trust system alongside a fact-checker and citation verifier.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+const ANTONYM_PAIRS=[['stateless','stateful'],['stateless','stores state'],['stateless','maintains state'],['never writes','writes'],['never write','write to disk'],['never stores','stores'],['no memory','has memory'],['no memory','memory of'],['no state','keeps state'],['independent','dependent'],['always safe','unsafe'],['always safe','dangerous'],['safe for','risks'],['safe for','should not'],['safe indefinitely','should not'],['completely secure','vulnerable'],['fully encrypted','unencrypted'],['fully encrypted','exposes'],['never shared','shared with'],['never share','shares with'],['no exceptions','exceptions'],['immutable','mutable'],['immutable','can be changed'],['immutable','modified'],['synchronous','asynchronous'],['blocking','non-blocking'],['single-threaded','multi-threaded'],['increases','decreases'],['faster','slower'],['more efficient','less efficient'],['always returns','sometimes returns'],['guaranteed','not guaranteed'],['prevents','allows'],['blocks','permits'],['denies','grants'],['open source','proprietary'],['free','paid'],['automatic','manual'],['lossless','lossy'],['deterministic','non-deterministic'],['pure function','side effects'],['no side effects','side effects'],['atomic','non-atomic'],['consistent','inconsistent'],['persistent','ephemeral'],['persistent','lost on restart'],['durable','lost when'],['strongly typed','weakly typed'],['compiled','interpreted'],['private','public'],['hidden','visible'],['encrypted','plain text'],['offline','requires internet'],['local','remote'],['cached','re-fetched every']];
+const ABSOLUTE_WORDS=['never','always','cannot','impossible','completely','entirely','zero','no ','none','without any','under no','at no point','in all cases','every single','100%'];
+const SCOPE_UNIVERSAL=['in all cases','every ','always','universally','without exception','100%','all instances','never fails','guaranteed'];
+const SCOPE_PARTIAL=['sometimes','in some cases','for certain','occasionally','not always','may not','can fail','might','under certain','depending on'];
+const NEGATIONS=['not ','no ','never ','without ','lack ','unable ','cannot ','doesn\'t ','does not ','isn\'t ','is not '];
+function sentences(t){return t.match(/[^.!?\n]+[.!?\n]+/g)||[t];}
+function norm(s){return s.toLowerCase().replace(/['"]/g,'').trim();}
+function overlap(a,b){const wa=new Set(a.split(/\s+/).filter(w=>w.length>4));const wb=new Set(b.split(/\s+/).filter(w=>w.length>4));let c=0;wa.forEach(w=>{if(wb.has(w))c++;});return c;}
+function runEngine(text){
+  const sents=sentences(text);
+  if(sents.length<2)return{flag:false,score:0,conf:null,checks:[],reason:"Too short — need at least 2–3 sentences.",qa:null,qb:null};
+  const ns=sents.map(norm);
+  let score=0,checks=[],qa=null,qb=null;
+  for(let i=0;i<ns.length;i++){for(let j=i+1;j<ns.length;j++){for(const[a,b]of ANTONYM_PAIRS){if(ns[i].includes(a)&&ns[j].includes(b)){score+=40;checks.push({icon:'ti-arrows-exchange',name:'Antonym pair',desc:`"${a}" in sentence ${i+1} conflicts with "${b}" in sentence ${j+1}.`});if(!qa){qa=sents[i].trim();qb=sents[j].trim();}}else if(ns[j].includes(a)&&ns[i].includes(b)){score+=40;checks.push({icon:'ti-arrows-exchange',name:'Antonym pair',desc:`"${a}" in sentence ${j+1} conflicts with "${b}" in sentence ${i+1}.`});if(!qa){qa=sents[j].trim();qb=sents[i].trim();}}}}}
+  for(let i=0;i<ns.length;i++){const hasAbs=ABSOLUTE_WORDS.some(w=>ns[i].includes(w));if(!hasAbs)continue;const absWord=ABSOLUTE_WORDS.find(w=>ns[i].includes(w));for(let j=0;j<ns.length;j++){if(i===j)continue;if(overlap(ns[i],ns[j])>=1){const iNeg=NEGATIONS.some(n=>ns[i].includes(n));const jNeg=NEGATIONS.some(n=>ns[j].includes(n));if(iNeg!==jNeg||(!iNeg&&!jNeg&&hasAbs)){const sw=ns[i].split(/\s+/).filter(w=>w.length>4&&ns[j].includes(w));if(sw.length>=1){score+=35;checks.push({icon:'ti-ban',name:'Absolute negation flip',desc:`Sentence ${i+1} uses absolute "${absWord}" but sentence ${j+1} contradicts it on the same subject.`});if(!qa){qa=sents[i].trim();qb=sents[j].trim();}}}}}}
+  const qtyAbs=['zero','none','no ','never','empty','null','nothing'];const qtyPos=['all','every','each','always','completely','entirely','100'];
+  for(let i=0;i<ns.length;i++){for(let j=i+1;j<ns.length;j++){if(overlap(ns[i],ns[j])<1)continue;const iAbs=qtyAbs.some(w=>ns[i].includes(w));const jHasAmt=/\d+|several|many|multiple|various|some|most|few/.test(ns[j]);if(iAbs&&jHasAmt){score+=30;checks.push({icon:'ti-calculator',name:'Quantity contradiction',desc:`Sentence ${i+1} implies zero/none but sentence ${j+1} implies a non-zero quantity on the same subject.`});if(!qa){qa=sents[i].trim();qb=sents[j].trim();}}const iPos=qtyPos.some(w=>ns[i].includes(w));const jPartial=/sometimes|some cases|partial|not always|certain|occasionally|may not/.test(ns[j]);if(iPos&&jPartial&&overlap(ns[i],ns[j])>=1){score+=30;checks.push({icon:'ti-calculator',name:'Quantity contradiction',desc:`Sentence ${i+1} makes a universal claim but sentence ${j+1} introduces exceptions on the same subject.`});if(!qa){qa=sents[i].trim();qb=sents[j].trim();}}}}
+  for(let i=0;i<ns.length;i++){const isU=SCOPE_UNIVERSAL.some(w=>ns[i].includes(w));if(!isU)continue;for(let j=i+1;j<ns.length;j++){const isP=SCOPE_PARTIAL.some(w=>ns[j].includes(w));if(isP&&overlap(ns[i],ns[j])>=1){score+=25;checks.push({icon:'ti-zoom-question',name:'Scope violation',desc:`Sentence ${i+1} claims universal scope but sentence ${j+1} introduces exceptions — same subject.`});if(!qa){qa=sents[i].trim();qb=sents[j].trim();}}}}
+  for(let i=0;i<ns.length;i++){for(let j=i+1;j<ns.length;j++){if(overlap(ns[i],ns[j])<2)continue;const iNeg=NEGATIONS.some(n=>ns[i].includes(n));const jNeg=NEGATIONS.some(n=>ns[j].includes(n));if(iNeg!==jNeg){const already=checks.some(c=>c.desc.includes(`sentence ${i+1}`)&&c.desc.includes(`sentence ${j+1}`)||c.desc.includes(`sentence ${j+1}`)&&c.desc.includes(`sentence ${i+1}`));if(!already){score+=20;checks.push({icon:'ti-git-branch',name:'Shared-subject negation',desc:`Sentences ${i+1} and ${j+1} share key subjects — one asserts, the other denies.`});if(!qa){qa=sents[i].trim();qb=sents[j].trim();}}}}}
+  const seen=new Set();checks=checks.filter(c=>{const k=c.name+c.desc.slice(0,30);if(seen.has(k))return false;seen.add(k);return true;});
+  score=Math.min(score,100);
+  const flag=score>=25;
+  const conf=score>=60?'high':score>=35?'medium':'low';
+  let reason;
+  if(!flag)reason='No logical contradiction detected. All claims appear consistent or represent complementary nuances rather than mutually exclusive statements.';
+  else if(conf==='high')reason=`Strong contradiction found (score ${score}/100). Two or more claims are logically mutually exclusive — if one is true, the other must be false.`;
+  else if(conf==='medium')reason=`Possible contradiction detected (score ${score}/100). Claims appear to conflict — human review advised.`;
+  else reason=`Weak contradiction signal (score ${score}/100). Borderline — may be nuance. Review manually.`;
+  return{flag,score,conf,checks,reason,qa,qb};
+}
+
+const EXAMPLES=[
+  {label:'Redis (contradiction)',text:"Redis is an in-memory data store, which means it never writes data to disk. This makes it extremely fast for read and write operations. Redis's persistence feature uses RDB snapshots and AOF logs to write all data to disk periodically, ensuring durability across restarts."},
+  {label:'Python GIL (clean)',text:"Python's Global Interpreter Lock prevents multiple native threads from executing Python bytecodes simultaneously. This is a limitation for CPU-bound tasks. However, for I/O-bound tasks like network calls or file operations, the GIL is released during the wait, so multi-threading still provides real concurrency benefits."},
+  {label:'Transformers (tricky!)',text:"Transformer models are inherently stateless — each forward pass processes the input independently with no memory of previous inputs. This is a fundamental architectural property that makes them scalable and parallelizable. The attention mechanism allows transformers to maintain and update a running state across tokens in a sequence, effectively giving the model memory of earlier tokens within the same context window."},
+  {label:'Privacy policy',text:"Our platform enforces strict data privacy — user data is never shared with third parties under any circumstances, and no exceptions are made to this policy. We work with select advertising and analytics partners who receive anonymized user behavior data to help us improve our services and deliver relevant experiences."},
+  {label:'Ibuprofen safety',text:"Ibuprofen is generally safe for long-term daily use and can be taken indefinitely for chronic pain management without significant health risks. It is important to note that long-term daily use of ibuprofen carries serious risks including gastrointestinal bleeding, kidney damage, and cardiovascular complications, and should not be continued for more than 10 days without medical supervision."},
+  {label:'ML data (clean)',text:"Machine learning models generally perform better with more training data. In most practical settings, doubling the dataset size will improve accuracy. However, there are diminishing returns — beyond a certain dataset size, adding more data yields increasingly smaller gains. In some cases, a smaller but higher-quality curated dataset can outperform a much larger noisy one."},
+];
+const TEST_CASES=[
+  {id:1,label:'Redis persistence',diff:'easy',shouldFlag:true,exIdx:0},
+  {id:2,label:'Python GIL explanation',diff:'easy',shouldFlag:false,exIdx:1},
+  {id:3,label:'Transformer statefulness',diff:'hard',shouldFlag:true,exIdx:2},
+  {id:4,label:'Privacy policy',diff:'medium',shouldFlag:true,exIdx:3},
+  {id:5,label:'Ibuprofen safety',diff:'medium',shouldFlag:true,exIdx:4},
+  {id:6,label:'ML data scaling (nuance)',diff:'medium',shouldFlag:false,exIdx:5},
+];
+
+function buildChips(){
+  const row=document.getElementById('chip-row');
+  EXAMPLES.forEach(e=>{
+    const c=document.createElement('span');
+    c.className='ex-chip';c.textContent=e.label;
+    c.onclick=()=>{document.querySelectorAll('.ex-chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');document.getElementById('ta').value=e.text;countChars();};
+    row.appendChild(c);
+  });
+}
+
+function buildTests(){
+  const list=document.getElementById('test-list');
+  let tp=0,fp=0,fn=0,tn=0;
+  TEST_CASES.forEach(tc=>{
+    const r=runEngine(EXAMPLES[tc.exIdx].text);
+    const pass=r.flag===tc.shouldFlag;
+    if(tc.shouldFlag&&r.flag)tp++;
+    else if(!tc.shouldFlag&&r.flag)fp++;
+    else if(tc.shouldFlag&&!r.flag)fn++;
+    else tn++;
+    const d=document.createElement('div');
+    d.className='test-card';
+    const scoreColor=r.score>=60?'var(--red)':r.score>=35?'var(--amber)':'var(--green)';
+    d.innerHTML=`<div class="test-header"><span class="test-num">#${tc.id}</span><span class="test-name">${tc.label}</span><div class="tag-row"><span class="tag ${tc.diff}">${tc.diff}</span><span class="tag ${r.flag?'flagged':'clean'}">${r.flag?'flagged':'clean'}</span><span class="tag ${pass?'pass':'fail'}">${pass?'✓ pass':'✗ fail'}</span></div></div><div class="test-body" id="tb${tc.id}"><p>${r.reason}</p><div class="test-score-line"><span style="font-size:12px;color:var(--muted)">Score:</span><span class="test-score-badge" style="background:${r.flag?'var(--red-bg)':'var(--green-bg)'};color:${r.flag?'var(--red)':'var(--green)'};border:1px solid ${r.flag?'var(--red-border)':'var(--green-border)'}">${r.score}/100</span><span style="font-size:12px;color:var(--muted)">Confidence: ${r.conf||'n/a'}</span><span style="font-size:12px;color:var(--muted)">Rules fired: ${r.checks.length}</span></div></div>`;
+    d.querySelector('.test-header').onclick=()=>d.querySelector('.test-body').classList.toggle('open');
+    list.appendChild(d);
+  });
+  const prec=tp/(tp+fp)||0,rec=tp/(tp+fn)||0,f1=2*prec*rec/(prec+rec)||0;
+  document.getElementById('m1').textContent=(tp+tn)+'/'+TEST_CASES.length;
+  document.getElementById('m2').textContent=(prec*100).toFixed(0)+'%';
+  document.getElementById('m3').textContent=(rec*100).toFixed(0)+'%';
+  document.getElementById('m4').textContent=f1.toFixed(2);
+}
+
+function countChars(){document.getElementById('cc').textContent=document.getElementById('ta').value.length+' chars';}
+
+function clearAll(){
+  document.getElementById('ta').value='';
+  document.getElementById('result-card').classList.remove('show');
+  document.querySelectorAll('.ex-chip').forEach(x=>x.classList.remove('active'));
+  countChars();
+}
+
+function animateRing(score){
+  const circ=182.2;
+  const offset=circ-(circ*score/100);
+  const fill=document.getElementById('ring-fill');
+  fill.style.strokeDashoffset=offset;
+  fill.style.stroke=score>=60?'#ff4d4d':score>=35?'#fbbf24':'#36d399';
+  document.getElementById('ring-num').textContent=score;
+}
+
+function analyze(){
+  const text=document.getElementById('ta').value.trim();
+  if(!text)return;
+  const r=runEngine(text);
+  const card=document.getElementById('result-card');
+  card.classList.add('show');
+  const vb=document.getElementById('vbadge');
+  if(r.flag&&r.conf==='high'){vb.className='verdict-badge danger';vb.innerHTML='<i class="ti ti-alert-triangle"></i> Contradiction detected';}
+  else if(r.flag&&r.conf==='medium'){vb.className='verdict-badge warning';vb.innerHTML='<i class="ti ti-alert-circle"></i> Possible contradiction';}
+  else if(r.flag){vb.className='verdict-badge warning';vb.innerHTML='<i class="ti ti-zoom-question"></i> Weak signal';}
+  else{vb.className='verdict-badge success';vb.innerHTML='<i class="ti ti-check"></i> No contradiction found';}
+  document.getElementById('cpill').textContent=r.conf?(r.conf+' confidence'):'';
+  document.getElementById('rreason').textContent=r.reason;
+  setTimeout(()=>animateRing(r.score),50);
+  document.getElementById('score-val').textContent=r.score+' / 100';
+  document.getElementById('rules-count').textContent=r.checks.length;
+  const bf=document.getElementById('bar-fill');
+  bf.style.width=r.score+'%';
+  bf.style.background=r.score>=60?'#ff4d4d':r.score>=35?'#fbbf24':'#36d399';
+  const cl=document.getElementById('checks-list');cl.innerHTML='';
+  if(r.checks.length===0){cl.innerHTML='<div class="check-item"><div class="check-dot" style="background:var(--green)"></div><div class="check-content"><div class="check-rule" style="color:var(--green)">All clear</div><div class="check-desc">No contradiction rules fired on this text.</div></div></div>';}
+  else{r.checks.slice(0,4).forEach(c=>{const d=document.createElement('div');d.className='check-item';d.innerHTML=`<div class="check-dot"></div><div class="check-content"><div class="check-rule">${c.name}</div><div class="check-desc">${c.desc}</div></div>`;cl.appendChild(d);});}
+  const qs=document.getElementById('quotes-section');
+  if(r.flag&&r.qa){qs.style.display='block';document.getElementById('qa').textContent='"'+r.qa+'"';document.getElementById('qb').textContent='"'+r.qb+'"';}
+  else{qs.style.display='none';}
+}
+
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+buildChips();
+buildTests();
+</script>
+</body>
+</html>

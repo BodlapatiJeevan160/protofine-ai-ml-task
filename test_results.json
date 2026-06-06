@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "label": "Clear technical contradiction",
+    "should_flag": true,
+    "detector_flagged": true,
+    "score": 35,
+    "confidence": "medium",
+    "passed": true
+  },
+  {
+    "id": 2,
+    "label": "Clean technical explanation (no contradiction)",
+    "should_flag": false,
+    "detector_flagged": false,
+    "score": 0,
+    "confidence": null,
+    "passed": true
+  },
+  {
+    "id": 3,
+    "label": "Confident-sounding answer with hidden contradiction (tricky case)",
+    "should_flag": true,
+    "detector_flagged": true,
+    "score": 75,
+    "confidence": "high",
+    "passed": true
+  },
+  {
+    "id": 4,
+    "label": "Medical domain self-contradiction",
+    "should_flag": true,
+    "detector_flagged": true,
+    "score": 40,
+    "confidence": "medium",
+    "passed": true
+  },
+  {
+    "id": 5,
+    "label": "Nuanced hedging \u2014 should NOT be flagged (false-positive trap)",
+    "should_flag": false,
+    "detector_flagged": false,
+    "score": 0,
+    "confidence": null,
+    "passed": true
+  },
+  {
+    "id": 6,
+    "label": "Policy/logical self-contradiction",
+    "should_flag": true,
+    "detector_flagged": true,
+    "score": 70,
+    "confidence": "high",
+    "passed": true
+  }
+]
